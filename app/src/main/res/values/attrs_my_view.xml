@@ -1,0 +1,9 @@
+<resources>
+    <declare-styleable name="MyView">
+        <attr name="sourceText" format="string"/>
+        <attr name="sourceDimension" format="dimension"/>
+        <attr name="sourceColor" format="color"/>
+        <attr name="annotationDimension" format="dimension"/>
+        <attr name="annotationColor" format="color"/>
+    </declare-styleable>
+</resources>
