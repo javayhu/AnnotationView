@@ -20,7 +20,7 @@ public class AnnotationHelper {
 
     //当然，为了更好的扩展，最好是将该内容放置在文件中，例如在assets中建立annotations.txt文件，方便扩展和修改
     private String mAnnotationDetails = "[\n" +
-            "            [{text: '天', ipa: 'おは', ipa_visible: ture}, {text: '気', ipa: 'き', ipa_visible: true}],\n" +
+            "            [{text: '天', ipa: 'おは', ipa_visible: true }, {text: '気', ipa: 'き', ipa_visible: true}],\n" +
             "            [{text: '予', ipa: 'よ', ipa_visible: true}, {text: '報', ipa: 'ほう', ipa_visible: true}],\n" +
             "            [{text: 'によ', ipa: 'によ', ipa_visible: false},    {text: 'る', ipa: 'る', ipa_visible: false}],\n" +
             "            [{text: 'と', ipa: 'と', ipa_visible: false}] ]";

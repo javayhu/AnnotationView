@@ -11,7 +11,6 @@ import android.graphics.Typeface;
 import android.os.Build;
 import android.text.TextPaint;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.View;
 
 /**
@@ -38,7 +37,7 @@ public class MyView extends View {
     private Paint.FontMetricsInt mFontMetrics;
     private Paint.FontMetricsInt mSmallFontMetrics;
 
-    //private AnnotationHelper mAnnotationHelper;
+    private AnnotationHelper mAnnotationHelper;
 
     public MyView(Context context) {
         super(context);
@@ -56,7 +55,7 @@ public class MyView extends View {
     }
 
     private void init(AttributeSet attrs, int defStyle) {
-        //mAnnotationHelper = AnnotationHelper.getInstance();
+        mAnnotationHelper = AnnotationHelper.getInstance();
 
         final TypedArray a = getContext().obtainStyledAttributes(attrs, R.styleable.MyView, defStyle, 0);
         mSourceText = a.getString(R.styleable.MyView_sourceText);
@@ -82,7 +81,7 @@ public class MyView extends View {
     private void invalidateTextPaintAndMeasurements() {
         mTextPaint.setTextSize(mSourceDimension);
         mTextPaint.setColor(mSourceColor);
-        mTextWidth = mTextPaint.measureText(mSourceText);//
+        mTextWidth = mTextPaint.measureText(mSourceText);//计算文本的宽度作为view的宽度
         mFontMetrics = mTextPaint.getFontMetricsInt();
         mTextHeight = mFontMetrics.bottom - mFontMetrics.top;//文本边界
 
@@ -111,7 +110,7 @@ public class MyView extends View {
         if (heightMode == MeasureSpec.EXACTLY) {
             height = heightSize;
         } else {
-            height = (int) (getPaddingTop() + mTextHeight + mSmallTextHeight + getPaddingBottom());
+            height = (int) (getPaddingTop() + mTextHeight + mSmallTextHeight + getPaddingBottom());//高度为文本和标注内容的高度之和
         }
 
         setMeasuredDimension(width, height);
@@ -132,56 +131,52 @@ public class MyView extends View {
         //计算下面的文本的显示区域
         Rect downRect = new Rect(0, (int) mSmallTextHeight, contentWidth, contentHeight);//left, top, right, bottom
         //计算baseline，使得文字垂直居中
-        int baseline = downRect.top + (downRect.bottom - downRect.top - mFontMetrics.bottom + mFontMetrics.top) / 2 - mFontMetrics.top;
-        //写下面的文本
-        canvas.drawText(mSourceText, downRect.centerX(), baseline, mTextPaint);
-
+        int downBaseline = downRect.top + (downRect.bottom - downRect.top - mFontMetrics.bottom + mFontMetrics.top) / 2 - mFontMetrics.top;
         //处理上面的标注
         Rect upRect = new Rect(0, 0, contentWidth, (int) mSmallTextHeight);
-        baseline = upRect.top + (upRect.bottom - upRect.top - mSmallFontMetrics.bottom + mSmallFontMetrics.top) / 2 - mSmallFontMetrics.top;
+        int upBaseline = upRect.top + (upRect.bottom - upRect.top - mSmallFontMetrics.bottom + mSmallFontMetrics.top) / 2 - mSmallFontMetrics.top;
 
-        Paint boundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        boundPaint.setColor(Color.RED);
-        boundPaint.setStrokeWidth(1);
-        boundPaint.setStyle(Paint.Style.STROKE);
+        //写下面的文本 -> 改为一个字符一个字符绘制
+        canvas.drawText(mSourceText, downRect.centerX(), downBaseline, mTextPaint);
+
+        Paint annotationBoundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        annotationBoundPaint.setColor(Color.RED);
+        annotationBoundPaint.setStrokeWidth(1);
+        annotationBoundPaint.setStyle(Paint.Style.STROKE);
 
         Paint sourceBoundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         sourceBoundPaint.setColor(Color.GREEN);
         sourceBoundPaint.setStrokeWidth(1);
         sourceBoundPaint.setStyle(Paint.Style.STROKE);
 
-        String current, start, annotation = "";
-        AnnotationHelper.AnnotationItem annotationItem;
-        int offset = 0;
+        float[] widths = new float[mSourceText.length()];
+        mTextPaint.getTextWidths(mSourceText, 0, mSourceText.length(), widths);//重点！使用getTextWidths才能得到真实的文本长度
+
+        int offset = 0, width=0;
+        String current, annotation = "";
         Rect annotationBound;
-        Rect sourceBound = new Rect(), offsetBound = new Rect();
+        AnnotationHelper.AnnotationItem annotationItem;
+
         for (int i = 0; i < mSourceText.length(); i++) {//start from 0
-            offset = (int) (mTextPaint.measureText(mSourceText, 0, i));//+ mTextPaint.getLetterSpacing()*i
-            /*mTextPaint.getTextBounds(mSourceText, 0, i, offsetBound);
-            Log.e(TAG, "offset " + i + " :" + sourceBound.toString());
-            offset = offsetBound.width();*/
+            if (i >= 1) offset += widths[i - 1];//加上前面的偏移量
+            width = (int) widths[i];
+            //Rect sourceRect = new Rect(offset, (int) mSmallTextHeight, offset + width, (int) (mTextHeight + mSmallTextHeight));
+            //canvas.drawRect(sourceRect, sourceBoundPaint);//显示下面的矩形框
 
-            mTextPaint.getTextBounds(mSourceText, i, i + 1, sourceBound);//先获取下面的文本的原文字的宽度
-            Log.e(TAG, "source " + i + " :" + sourceBound.toString());
-            Rect sourceRect = new Rect(offset, (int) mSmallTextHeight, offset + sourceBound.width(), (int) (mTextHeight + mSmallTextHeight));
-            canvas.drawRect(sourceRect, sourceBoundPaint);
-
-            //offset = (int)((i - 1) * mAnnotationDimension);
-            annotationBound = new Rect(offset, 0, offset + sourceBound.width(), (int) mSmallTextHeight);//取得上面的标注文本的bound
-            Log.e(TAG, "annotation " + i + " :" + annotationBound.toString());
-            canvas.drawRect(annotationBound, boundPaint);
+            annotationBound = new Rect(offset, 0, offset + width, (int) mSmallTextHeight);//取得上面的标注文本的bound
+            //canvas.drawRect(annotationBound, annotationBoundPaint);//显示上面的矩形框
 
             current = mSourceText.substring(i, i + 1);
             if (current.equalsIgnoreCase("，") || current.equalsIgnoreCase("。") || current.equalsIgnoreCase(" ")) {//todo 不确定这里还有哪些可能的标点符号，暂时只处理例子中的逗号和句号
                 continue;
             } else {//非标点符号和空格都需要处理
-                /*annotationItem = mAnnotationHelper.getAnnotationText(current);
+                annotationItem = mAnnotationHelper.getAnnotationText(current);
                 if (null != annotationItem && annotationItem.visible == true) {//存在标注并且需要显示的时候才drawText
                     annotation = annotationItem.ipa;
-                    canvas.drawText(annotation, annotationBound.centerX(), baseline, mSmallTextPaint);
-                }*/
-                annotation = i % 2 == 0 ? "に" : "にに";
-                canvas.drawText(annotation, annotationBound.centerX(), baseline, mSmallTextPaint);
+                    canvas.drawText(annotation, annotationBound.centerX(), upBaseline, mSmallTextPaint);
+                }
+                /*annotation = i % 2 == 0 ? "に" : "にに";
+                canvas.drawText(annotation, annotationBound.centerX(), upBaseline, mSmallTextPaint);*/
             }
         }
     }

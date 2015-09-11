@@ -17,9 +17,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         app:annotationDimension="12sp"
-        app:annotationColor="#00f"
+        app:annotationColor="#333"
         app:sourceDimension="24sp"
-        app:sourceColor="#0a0"
+        app:sourceColor="#000"
         app:sourceText="天気予報報，による，と。"/>
 
 </RelativeLayout>
