@@ -175,8 +175,6 @@ public class MyView extends View {
                     annotation = annotationItem.ipa;
                     canvas.drawText(annotation, annotationBound.centerX(), upBaseline, mSmallTextPaint);
                 }
-                /*annotation = i % 2 == 0 ? "に" : "にに";
-                canvas.drawText(annotation, annotationBound.centerX(), upBaseline, mSmallTextPaint);*/
             }
         }
     }
